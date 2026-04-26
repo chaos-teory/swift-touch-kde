@@ -1,3 +1,9 @@
+swift-touch-kde (0.1.0-2) questing; urgency=medium
+
+  * Make user setup helper resilient when ~/.config/autostart is not writable.
+
+ -- chaos <chaos@users.noreply.github.com>  Sun, 26 Apr 2026 22:45:00 +0300
+
 swift-touch-kde (0.1.0-1) questing; urgency=medium
 
   * Initial Debian packaging for KDE integration.

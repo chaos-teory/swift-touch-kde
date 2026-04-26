@@ -2,13 +2,20 @@
 set -euo pipefail
 
 SERVICE_NAME="swift-touch-media.service"
+AUTOSTART_SRC="/etc/xdg/autostart/swift-touch-kde-tray.desktop"
+AUTOSTART_DIR="${HOME}/.config/autostart"
+AUTOSTART_DST="${AUTOSTART_DIR}/swift-touch-kde-tray.desktop"
 
 systemctl --user daemon-reload || true
 systemctl --user enable --now "${SERVICE_NAME}"
 
-if [[ -f /etc/xdg/autostart/swift-touch-kde-tray.desktop ]]; then
-  install -d -m 0755 "${HOME}/.config/autostart"
-  cp -f /etc/xdg/autostart/swift-touch-kde-tray.desktop "${HOME}/.config/autostart/swift-touch-kde-tray.desktop"
+if [[ -f "${AUTOSTART_SRC}" ]]; then
+  mkdir -p "${AUTOSTART_DIR}" || true
+  if [[ -w "${AUTOSTART_DIR}" ]]; then
+    cp -f "${AUTOSTART_SRC}" "${AUTOSTART_DST}"
+  else
+    echo "Warning: cannot write ${AUTOSTART_DIR}; skipping per-user autostart copy." >&2
+  fi
 fi
 
 echo "Swift Touch KDE user setup completed."
