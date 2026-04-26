@@ -1,184 +1,136 @@
 # swift-touch-kde
 
-Linux/KDE toolkit for Acer Swift SFG16-74 multimedia touchpad reverse-engineering and control.
+Acer Swift multimedia touchpad integration for KDE Plasma on Linux.
 
-Current hardware focus:
-- `PIXA480A:00 093A:480A` (touchpad)
-- `1025174B:00 1025:174B` (Acer vendor HID channel, `hidraw1` on this host)
+This project provides:
+- media-strip event decoding for supported Acer Swift touchpads;
+- media key emission (`Play/Pause`, `Previous`, `Next`);
+- KDE tray app and settings window;
+- KDE System Settings integration;
+- Debian package (`.deb`) build and install workflow.
 
-The tool uses raw HID ioctls (`HIDIOCGFEATURE/HIDIOCSFEATURE/HIDIOCGINPUT`) and can:
-- scan candidate HID devices;
-- send raw feature commands;
-- run predefined Acer touchpad commands found in AcerSense binaries;
-- read/write MediaTouchPad registers (`118..123`) via Windows-compatible report `0x43`;
-- monitor feature reports and input events for state changes.
+## Status
 
-## File
+Current support is focused on:
+- `Acer Swift SFG16-74`
+- touchpad HID: `PIXA480A:00 093A:480A`
 
-- `swift_touch_kde.py` - CLI tool / daemon entrypoint.
-- `swift_touch_kde_tray.py` - KDE tray controller.
-- `swift_touch_kde_settings.py` - KDE settings window (GUI).
-- `install_kde_app.sh` - installer (udev + systemd + desktop integration).
+The project is functional but still experimental. Behavior on other models is not guaranteed.
 
-## Run
+## Install (Recommended)
+
+Install from GitHub Releases:
+
+1. Open latest release:
+   - `https://github.com/chaos-teory/swift-touch-kde/releases/latest`
+2. Download:
+   - `swift-touch-kde_<version>_all.deb`
+   - `swift-touch-kde_<version>_all.deb.sha256`
+3. Install package:
 
 ```bash
-cd /home/chaos/git/swift-touch-kde
-chmod +x swift_touch_kde.py
-sudo ./swift_touch_kde.py scan
+sudo apt install ./swift-touch-kde_*_all.deb
 ```
 
-## KDE App + Persistent Service
-
-Install persistent integration (udev + user systemd service + KDE tray app + autostart):
+4. Run user setup (as your regular user, not root):
 
 ```bash
-cd /home/chaos/git/swift-touch-kde
-chmod +x install_kde_app.sh
-sudo ./install_kde_app.sh chaos
-```
-
-After install:
-- media daemon service: `swift-touch-media.service` (user service)
-- tray app launcher: `Swift Touch KDE`
-- settings app launcher: `Swift Touch KDE Settings`
-- autostart entry: `~/.config/autostart/swift-touch-kde-tray.desktop`
-- System Settings external module: `Swift Touch KDE` (Input Devices category)
-
-Open settings window manually:
-
-```bash
-~/.local/bin/swift-touch-kde-settings.py
-```
-
-## Debian Package Build
-
-Build `.deb` locally:
-
-```bash
-cd /home/chaos/git/swift-touch-kde
-sudo apt install -y debhelper dh-python python3-all
-dpkg-buildpackage -us -uc -b
-```
-
-Install generated package:
-
-```bash
-cd ..
-sudo apt install ./swift-touch-kde_*.deb
 swift-touch-kde-user-setup
 ```
 
-After package install:
-- launcher command: `swift-touch-kde-settings`
-- tray command: `swift-touch-kde-tray`
-- service unit: `swift-touch-media.service` (user unit in `/usr/lib/systemd/user`)
-- KDE System Settings entry: `Swift Touch KDE`
+After install:
+- command-line tool: `swift-touch-kde`
+- GUI settings: `swift-touch-kde-settings`
+- tray app: `swift-touch-kde-tray`
+- user service: `swift-touch-media.service`
+- KDE System Settings module: `Swift Touch KDE`
 
-## Main commands
+## Build Debian Package
 
-1. Scan devices:
-
-```bash
-sudo ./swift_touch_kde.py scan
-```
-
-2. Monitor feature reports (`a0` and `0b`) for changes:
+Build locally:
 
 ```bash
-sudo ./swift_touch_kde.py monitor --seconds 30
+sudo apt install -y debhelper dh-python python3-all
+cd swift-touch-kde
+dpkg-buildpackage -us -uc -b
 ```
 
-3. Send legacy Acer A0 touchpad commands (vendor HID channel):
+Install built package:
 
 ```bash
-sudo ./swift_touch_kde.py touchpad-query
-sudo ./swift_touch_kde.py touchpad-enable
-sudo ./swift_touch_kde.py touchpad-disable
-sudo ./swift_touch_kde.py touchpad-set --value 0x02
+sudo apt install ../swift-touch-kde_*_all.deb
+swift-touch-kde-user-setup
 ```
 
-4. Raw HID read/write:
+## Developer Install (From Source)
+
+If you want to run directly from source instead of `.deb`:
 
 ```bash
-sudo ./swift_touch_kde.py raw-get --dev /dev/hidraw1 --kind feature --report 0xa0 --length 65
-sudo ./swift_touch_kde.py raw-set --dev /dev/hidraw1 --length 65 --bytes "a0 00 a0 04 00 02 00 00 02"
-sudo ./swift_touch_kde.py a0-send --cmd "a0 00 a0 00 00 01 00 01"
+git clone https://github.com/chaos-teory/swift-touch-kde.git
+mkdir -p ~/git
+mv swift-touch-kde ~/git/
+cd ~/git/swift-touch-kde
+sudo ./install_kde_app.sh "$USER"
 ```
 
-5. MediaTouchPad register control (working path on SFG16-74: `/dev/hidraw0`, report `0x43`):
+Note: `install_kde_app.sh` expects repository path `~/git/swift-touch-kde` for the target user.
+
+## Usage
+
+Show all commands:
 
 ```bash
-sudo ./swift_touch_kde.py mtp-dump --dev /dev/hidraw0
-sudo ./swift_touch_kde.py mtp-read --dev /dev/hidraw0 --reg 120
-sudo ./swift_touch_kde.py mtp-write --dev /dev/hidraw0 --reg 120 --value 1
-sudo ./swift_touch_kde.py set-touchpad-status-in-media-mode --dev /dev/hidraw0 --status 1
-sudo ./swift_touch_kde.py set-app-auto-control-mode --dev /dev/hidraw0 --mode 0
+swift-touch-kde --help
 ```
 
-6. Capture evdev keys while touching multimedia icons:
+Common commands:
 
 ```bash
-sudo ./swift_touch_kde.py watch-events --seconds 30
+# scan devices
+sudo swift-touch-kde scan
+
+# run daemon mode (debug print)
+sudo swift-touch-kde run-media-keys --dev /dev/hidraw0 --emit print --seconds 30
+
+# read media-mode register
+sudo swift-touch-kde mtp-read --dev /dev/hidraw0 --reg 120
+
+# watch consumer reports
+sudo swift-touch-kde watch-consumer --seconds 30 --only-press
 ```
 
-7. Unified raw capture to file (best for reverse sessions):
+Service control:
 
 ```bash
-sudo ./swift_touch_kde.py probe --seconds 45 --log /tmp/swift-touch-probe.log
+systemctl --user status swift-touch-media.service
+systemctl --user restart swift-touch-media.service
+journalctl --user -u swift-touch-media.service -f
 ```
 
-8. Live hidraw packet sniff with timestamps:
+## Troubleshooting
+
+- If service cannot access `/dev/hidraw0` or `/dev/uinput`, run:
 
 ```bash
-sudo ./swift_touch_kde.py sniff-hidraw --dev /dev/hidraw0 --seconds 30 --only-changes --log /tmp/hidraw0-sniff.log
+swift-touch-kde-user-setup
 ```
 
-9. Decode multimedia consumer reports (report `0x0c`) from touchpad:
+- If touchpad enters a broken hardware state, a full power cycle may be required.
+
+- Check current service logs:
 
 ```bash
-sudo ./swift_touch_kde.py watch-consumer --seconds 30 --only-press --log /tmp/touch-consumer.log
+journalctl --user -u swift-touch-media.service -n 120 --no-pager
 ```
 
-10. Emit real media keys (`PlayPause`, `Previous`, `Next`) from multimedia strip taps:
+## Uninstall
 
 ```bash
-sudo ./swift_touch_kde.py run-media-keys --dev /dev/hidraw0 --seconds 0
+sudo apt purge swift-touch-kde
 ```
 
-Debug mode (no key injection, only prints detected actions):
+## Reverse Engineering Notes
 
-```bash
-sudo ./swift_touch_kde.py run-media-keys --dev /dev/hidraw0 --emit print --seconds 30
-```
-
-Known usage codes observed on this device:
-- `0x00e9` -> `VOLUMEUP`
-- `0x00ea` -> `VOLUMEDOWN`
-- release event -> `0x0000`
-
-Additional Acer reverse commands:
-
-```bash
-sudo ./swift_touch_kde.py appstatus-on
-sudo ./swift_touch_kde.py appstatus-off
-```
-
-## Notes
-
-- Commands are experimental and intentionally conservative.
-- If `--dev` is omitted, the tool auto-picks Acer vendor HID (`VID 1025`) first.
-- For MediaTouchPad settings (`GET/SET_*_IN_MEDIA_MODE`) prefer explicit `--dev /dev/hidraw0` on this host.
-- `FUNCTION_KEY_CONTROL_EN` (`reg 118`) may auto-override `MEDIA_TP_FUNCTION_CONTROL` (`reg 120`) depending on current mode logic.
-- If you hit bad state, power-cycle is still the safest full reset.
-
-## Windows Reverse Notes
-
-Latest static reverse snapshot is documented here:
-
+Windows reverse notes are documented in:
 - `docs/windows_reverse_acer5.md`
-
-Highlights:
-- `AQAUserPS.exe` processes RawInput touchpad events and reports to `AcerQAAgent.exe`.
-- Media-touchpad service commands were recovered (`GET/SET_*` for media mode, touchpad-in-media-mode, lighting, brightness, YouTube button mode).
-- YouTube previous/next icon behavior has 3 modes (`SpeedDownUp`, `RewindForward`, `LastNextVideo`), selected via `Mode=1..3`.
