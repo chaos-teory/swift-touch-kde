@@ -1,0 +1,13 @@
+.TH SWIFT-TOUCH-KDE-USER-SETUP 1 "April 2026" "swift-touch-kde 0.1.0" "User Commands"
+.SH NAME
+swift-touch-kde-user-setup \- enable and start Swift Touch KDE user service
+.SH SYNOPSIS
+.B swift-touch-kde-user-setup
+.SH DESCRIPTION
+Runs user-level setup steps:
+.IP \(bu 2
+Reload user systemd units
+.IP \(bu 2
+Enable and start \fBswift-touch-media.service\fR for the current user
+.IP \(bu 2
+Copy tray autostart desktop entry into \fI~/.config/autostart\fR when available

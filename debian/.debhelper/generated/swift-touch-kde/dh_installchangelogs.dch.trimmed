@@ -1,0 +1,7 @@
+swift-touch-kde (0.1.0-1) questing; urgency=medium
+
+  * Initial Debian packaging for KDE integration.
+  * Install user service, udev rules, launcher, and System Settings module.
+  * Add user setup helper for enabling and starting the media daemon.
+
+ -- chaos <chaos@users.noreply.github.com>  Sun, 26 Apr 2026 22:20:00 +0300

@@ -51,6 +51,30 @@ Open settings window manually:
 ~/.local/bin/swift-touch-kde-settings.py
 ```
 
+## Debian Package Build
+
+Build `.deb` locally:
+
+```bash
+cd /home/chaos/git/swift-touch-kde
+sudo apt install -y debhelper dh-python python3-all
+dpkg-buildpackage -us -uc -b
+```
+
+Install generated package:
+
+```bash
+cd ..
+sudo apt install ./swift-touch-kde_*.deb
+swift-touch-kde-user-setup
+```
+
+After package install:
+- launcher command: `swift-touch-kde-settings`
+- tray command: `swift-touch-kde-tray`
+- service unit: `swift-touch-media.service` (user unit in `/usr/lib/systemd/user`)
+- KDE System Settings entry: `Swift Touch KDE`
+
 ## Main commands
 
 1. Scan devices:

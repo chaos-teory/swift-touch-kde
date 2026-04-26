@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>swift-touch-kde-settings.desktop</id>
+  <name>Swift Touch KDE</name>
+  <summary>Acer Swift multimedia touchpad integration for KDE Plasma</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <description>
+    <p>
+      Swift Touch KDE provides multimedia-strip support for Acer Swift touchpads
+      and integrates controls into KDE Plasma tray and System Settings.
+    </p>
+  </description>
+  <launchable type="desktop-id">swift-touch-kde-settings.desktop</launchable>
+  <provides>
+    <modalias>hid:b0003g0001v0000093Ap0000480A</modalias>
+  </provides>
+</component>

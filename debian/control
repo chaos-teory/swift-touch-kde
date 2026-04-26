@@ -1,0 +1,28 @@
+Source: swift-touch-kde
+Section: utils
+Priority: optional
+Maintainer: chaos <chaos@users.noreply.github.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ dh-python,
+ python3-all
+Standards-Version: 4.7.0
+Rules-Requires-Root: binary-targets
+Homepage: https://github.com/chaos-teory/swift-touch-kde
+
+Package: swift-touch-kde
+Architecture: all
+Depends:
+ ${misc:Depends},
+ ${python3:Depends},
+ python3-pyqt6,
+ systemd,
+ udev,
+ xdg-utils
+Recommends:
+ plasma-workspace
+Description: Acer Swift multimedia touchpad integration for KDE Plasma
+ Swift Touch KDE provides media-strip support for Acer Swift touchpads on Linux.
+ .
+ The package installs a user service that maps touchpad multimedia strip actions
+ to media keys, a tray controller, and a KDE System Settings entry.

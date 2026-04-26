@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SERVICE_NAME="swift-touch-media.service"
+
+systemctl --user daemon-reload || true
+systemctl --user enable --now "${SERVICE_NAME}"
+
+if [[ -f /etc/xdg/autostart/swift-touch-kde-tray.desktop ]]; then
+  install -d -m 0755 "${HOME}/.config/autostart"
+  cp -f /etc/xdg/autostart/swift-touch-kde-tray.desktop "${HOME}/.config/autostart/swift-touch-kde-tray.desktop"
+fi
+
+echo "Swift Touch KDE user setup completed."
+echo "Service ${SERVICE_NAME} is enabled and started for user ${USER}."

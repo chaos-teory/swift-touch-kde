@@ -1,0 +1,21 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@ --with python3
+
+override_dh_auto_build:
+	:
+
+override_dh_auto_install:
+	install -Dm755 swift_touch_kde.py debian/swift-touch-kde/usr/bin/swift-touch-kde
+	install -Dm755 swift_touch_kde_tray.py debian/swift-touch-kde/usr/bin/swift-touch-kde-tray
+	install -Dm755 swift_touch_kde_settings.py debian/swift-touch-kde/usr/bin/swift-touch-kde-settings
+	install -Dm755 packaging/bin/swift-touch-kde-user-setup debian/swift-touch-kde/usr/bin/swift-touch-kde-user-setup
+	install -Dm644 debian/swift-touch-media.service debian/swift-touch-kde/usr/lib/systemd/user/swift-touch-media.service
+	install -Dm644 packaging/udev/85-swift-touch-kde.rules debian/swift-touch-kde/usr/lib/udev/rules.d/85-swift-touch-kde.rules
+	install -Dm644 debian/swift-touch-kde-settings.desktop debian/swift-touch-kde/usr/share/applications/swift-touch-kde-settings.desktop
+	install -Dm644 debian/swift-touch-kde-tray.desktop debian/swift-touch-kde/usr/share/applications/swift-touch-kde-tray.desktop
+	install -Dm644 debian/kcm_swift_touch.desktop debian/swift-touch-kde/usr/share/applications/kcm_swift_touch.desktop
+	install -Dm644 debian/swift-touch-kde-systemsettings.desktop debian/swift-touch-kde/usr/share/plasma/systemsettings/externalmodules/swift-touch-kde.desktop
+	install -Dm644 debian/swift-touch-kde.metainfo.xml debian/swift-touch-kde/usr/share/metainfo/swift-touch-kde.metainfo.xml
+	install -Dm644 debian/swift-touch-kde-tray.desktop debian/swift-touch-kde/etc/xdg/autostart/swift-touch-kde-tray.desktop

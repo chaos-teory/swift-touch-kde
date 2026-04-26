@@ -1,0 +1,26 @@
+.TH SWIFT-TOUCH-KDE 1 "April 2026" "swift-touch-kde 0.1.0" "User Commands"
+.SH NAME
+swift-touch-kde \- Acer Swift multimedia touchpad CLI for Linux/KDE
+.SH SYNOPSIS
+.B swift-touch-kde
+.I command
+[\fIoptions\fR]
+.SH DESCRIPTION
+\fBswift-touch-kde\fR provides low-level HID tooling and a runtime daemon that
+maps Acer Swift multimedia touchpad actions to media keys.
+.PP
+Run \fBswift-touch-kde --help\fR for the full command list.
+.SH EXAMPLES
+.TP
+.B swift-touch-kde scan
+Scan supported HID devices.
+.TP
+.B swift-touch-kde run-media-keys --dev /dev/hidraw0 --seconds 0 --emit uinput --require-active
+Run media-key daemon mode.
+.SH FILES
+.TP
+.I /usr/lib/systemd/user/swift-touch-media.service
+User service unit installed by the package.
+.TP
+.I /usr/lib/udev/rules.d/85-swift-touch-kde.rules
+udev permissions for hidraw/uinput access.
