@@ -4,3 +4,14 @@ __pycache__/
 *.swp
 *.log
 .DS_Store
+
+# Debian build artifacts
+debian/.debhelper/
+debian/debhelper-build-stamp
+debian/files
+debian/*.debhelper
+debian/*.substvars
+debian/swift-touch-kde/
+../swift-touch-kde_*.deb
+../swift-touch-kde_*.buildinfo
+../swift-touch-kde_*.changes

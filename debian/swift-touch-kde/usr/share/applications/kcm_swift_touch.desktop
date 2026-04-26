@@ -1,9 +1,0 @@
-[Desktop Entry]
-Type=Application
-NoDisplay=true
-X-KDE-AliasFor=systemsettings
-Name=Swift Touch KDE
-Comment=Swift multimedia touchpad settings
-Exec=swift-touch-kde-settings
-Icon=preferences-desktop-touchpad
-OnlyShowIn=KDE;
