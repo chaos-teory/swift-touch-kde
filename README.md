@@ -2,6 +2,8 @@
 
 Acer Swift multimedia touchpad integration for KDE Plasma on Linux.
 
+Русская версия: [README.ru.md](README.ru.md)
+
 This project provides:
 - media-strip event decoding for supported Acer Swift touchpads;
 - media key emission (`Play/Pause`, `Previous`, `Next`);
