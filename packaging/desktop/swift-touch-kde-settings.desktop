@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Swift Touch KDE Settings
+Comment=Manage Acer Swift multimedia touchpad integration
+Exec=__USER_HOME__/.local/bin/swift-touch-kde-settings.py
+Icon=preferences-desktop-touchpad
+Terminal=false
+Categories=Qt;KDE;Settings;HardwareSettings;
+OnlyShowIn=KDE;
+StartupNotify=true
+X-KDE-StartupNotify=true
+X-KDE-System-Settings-Parent-Category=input-devices
+X-KDE-Weight=65

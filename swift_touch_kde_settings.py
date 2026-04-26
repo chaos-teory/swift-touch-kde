@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+from PyQt6.QtCore import QTimer
+from PyQt6.QtWidgets import (
+    QApplication,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
+    QMessageBox,
+    QPushButton,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
+
+SERVICE_NAME = "swift-touch-media.service"
+PROJECT_DIR = Path(__file__).resolve().parent
+
+
+class SwiftTouchSettingsWindow(QMainWindow):
+    def __init__(self) -> None:
+        super().__init__()
+        self.setWindowTitle("Swift Touch KDE Settings")
+        self.resize(900, 560)
+
+        central = QWidget()
+        self.setCentralWidget(central)
+        root = QVBoxLayout(central)
+
+        # Status box
+        status_box = QGroupBox("Service Status")
+        status_grid = QGridLayout(status_box)
+        self.active_label = QLabel("-")
+        self.enabled_label = QLabel("-")
+        self.dev_hidraw_label = QLabel("-")
+        self.dev_uinput_label = QLabel("-")
+        status_grid.addWidget(QLabel("Active:"), 0, 0)
+        status_grid.addWidget(self.active_label, 0, 1)
+        status_grid.addWidget(QLabel("Autostart:"), 1, 0)
+        status_grid.addWidget(self.enabled_label, 1, 1)
+        status_grid.addWidget(QLabel("/dev/hidraw0 access:"), 2, 0)
+        status_grid.addWidget(self.dev_hidraw_label, 2, 1)
+        status_grid.addWidget(QLabel("/dev/uinput access:"), 3, 0)
+        status_grid.addWidget(self.dev_uinput_label, 3, 1)
+        root.addWidget(status_box)
+
+        # Control buttons
+        controls_box = QGroupBox("Controls")
+        controls = QHBoxLayout(controls_box)
+        self.btn_start = QPushButton("Start")
+        self.btn_stop = QPushButton("Stop")
+        self.btn_restart = QPushButton("Restart")
+        self.btn_enable = QPushButton("Enable Autostart")
+        self.btn_disable = QPushButton("Disable Autostart")
+        self.btn_refresh = QPushButton("Refresh")
+        controls.addWidget(self.btn_start)
+        controls.addWidget(self.btn_stop)
+        controls.addWidget(self.btn_restart)
+        controls.addWidget(self.btn_enable)
+        controls.addWidget(self.btn_disable)
+        controls.addWidget(self.btn_refresh)
+        root.addWidget(controls_box)
+
+        # Integration actions
+        integration_box = QGroupBox("Integration")
+        integration = QHBoxLayout(integration_box)
+        self.btn_install = QPushButton("Install/Repair Integration (pkexec)")
+        self.btn_open_tray = QPushButton("Open Tray App")
+        self.btn_open_project = QPushButton("Open Project Folder")
+        self.btn_open_logs = QPushButton("Open Live Logs")
+        integration.addWidget(self.btn_install)
+        integration.addWidget(self.btn_open_tray)
+        integration.addWidget(self.btn_open_project)
+        integration.addWidget(self.btn_open_logs)
+        root.addWidget(integration_box)
+
+        # Log preview
+        log_box = QGroupBox("Recent Service Log")
+        log_layout = QVBoxLayout(log_box)
+        self.log_text = QTextEdit()
+        self.log_text.setReadOnly(True)
+        log_layout.addWidget(self.log_text)
+        root.addWidget(log_box)
+
+        self.btn_start.clicked.connect(lambda: self.service_cmd(["start"]))
+        self.btn_stop.clicked.connect(lambda: self.service_cmd(["stop"]))
+        self.btn_restart.clicked.connect(lambda: self.service_cmd(["restart"]))
+        self.btn_enable.clicked.connect(lambda: self.service_cmd(["enable", "--now"]))
+        self.btn_disable.clicked.connect(lambda: self.service_cmd(["disable", "--now"]))
+        self.btn_refresh.clicked.connect(self.refresh_all)
+
+        self.btn_install.clicked.connect(self.install_integration)
+        self.btn_open_tray.clicked.connect(self.open_tray)
+        self.btn_open_project.clicked.connect(lambda: subprocess.Popen(["xdg-open", str(PROJECT_DIR)]))
+        self.btn_open_logs.clicked.connect(self.open_logs)
+
+        self.timer = QTimer(self)
+        self.timer.setInterval(3000)
+        self.timer.timeout.connect(self.refresh_all)
+        self.timer.start()
+
+        self.refresh_all()
+
+    def run_cmd(self, args: list[str]) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+
+    def service_cmd(self, args: list[str]) -> None:
+        p = self.run_cmd(["systemctl", "--user"] + args + [SERVICE_NAME])
+        if p.returncode != 0:
+            msg = p.stderr.strip() or p.stdout.strip() or "unknown error"
+            QMessageBox.warning(self, "Swift Touch KDE", f"Command failed: {' '.join(args)}\n\n{msg}")
+        self.refresh_all()
+
+    def refresh_all(self) -> None:
+        active = self.run_cmd(["systemctl", "--user", "is-active", SERVICE_NAME]).stdout.strip() or "inactive"
+        enabled = self.run_cmd(["systemctl", "--user", "is-enabled", SERVICE_NAME]).stdout.strip() or "disabled"
+        self.active_label.setText(active)
+        self.enabled_label.setText(enabled)
+
+        self.btn_start.setEnabled(active != "active")
+        self.btn_stop.setEnabled(active == "active")
+
+        self.dev_hidraw_label.setText(self._dev_access("/dev/hidraw0"))
+        self.dev_uinput_label.setText(self._dev_access("/dev/uinput"))
+        self.refresh_logs()
+
+    def _dev_access(self, path: str) -> str:
+        return "ok" if os.access(path, os.R_OK | os.W_OK) else "no access"
+
+    def refresh_logs(self) -> None:
+        p = self.run_cmd(["journalctl", "--user", "-u", SERVICE_NAME, "-n", "80", "--no-pager"])
+        if p.returncode == 0:
+            self.log_text.setPlainText(p.stdout.rstrip())
+        else:
+            self.log_text.setPlainText(p.stderr.strip() or p.stdout.strip())
+
+    def install_integration(self) -> None:
+        script = PROJECT_DIR / "install_kde_app.sh"
+        if not script.exists():
+            QMessageBox.critical(self, "Swift Touch KDE", f"Installer not found:\n{script}")
+            return
+        cmd = ["pkexec", str(script), os.environ.get("USER", "chaos")]
+        p = self.run_cmd(cmd)
+        if p.returncode == 0:
+            QMessageBox.information(self, "Swift Touch KDE", "Integration installed/repaired successfully.")
+        else:
+            msg = p.stderr.strip() or p.stdout.strip() or "unknown error"
+            QMessageBox.warning(self, "Swift Touch KDE", f"Install failed:\n\n{msg}")
+        self.refresh_all()
+
+    def open_tray(self) -> None:
+        for path in (
+            Path.home() / ".local/bin/swift-touch-kde-tray.py",
+            PROJECT_DIR / "swift_touch_kde_tray.py",
+        ):
+            if path.exists():
+                subprocess.Popen([str(path)])
+                return
+        QMessageBox.warning(self, "Swift Touch KDE", "Tray app not found.")
+
+    def open_logs(self) -> None:
+        for cmd in (
+            ["konsole", "--noclose", "-e", "journalctl", "--user", "-u", SERVICE_NAME, "-f"],
+            ["x-terminal-emulator", "-e", "journalctl", "--user", "-u", SERVICE_NAME, "-f"],
+        ):
+            try:
+                subprocess.Popen(cmd)
+                return
+            except FileNotFoundError:
+                continue
+        QMessageBox.warning(self, "Swift Touch KDE", "No terminal emulator found.")
+
+
+def main() -> int:
+    app = QApplication(sys.argv)
+    w = SwiftTouchSettingsWindow()
+    w.show()
+    return app.exec()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

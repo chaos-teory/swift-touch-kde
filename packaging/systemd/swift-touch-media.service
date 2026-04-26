@@ -1,0 +1,15 @@
+[Unit]
+Description=Swift Touch KDE media key daemon
+After=graphical-session.target
+Wants=graphical-session.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/git/swift-touch-kde
+ExecStart=/usr/bin/python3 %h/git/swift-touch-kde/swift_touch_kde.py run-media-keys --dev /dev/hidraw0 --seconds 0 --emit uinput --require-active
+Restart=always
+RestartSec=1
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target

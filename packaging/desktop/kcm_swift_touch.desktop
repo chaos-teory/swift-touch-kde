@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+NoDisplay=true
+X-KDE-AliasFor=systemsettings
+Name=Swift Touch KDE
+Comment=Swift multimedia touchpad settings
+Exec=__USER_HOME__/.local/bin/swift-touch-kde-settings.py
+Icon=preferences-desktop-touchpad
+OnlyShowIn=KDE;

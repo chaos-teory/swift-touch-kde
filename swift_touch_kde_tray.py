@@ -1,0 +1,140 @@
+#!/usr/bin/env python3
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+from PyQt6.QtCore import QTimer
+from PyQt6.QtGui import QAction, QIcon
+from PyQt6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
+
+SERVICE_NAME = "swift-touch-media.service"
+PROJECT_DIR = Path(__file__).resolve().parent
+
+
+class SwiftTouchTray:
+    def __init__(self) -> None:
+        self.app = QApplication(sys.argv)
+        self.app.setQuitOnLastWindowClosed(False)
+
+        self.tray = QSystemTrayIcon()
+        self.tray.setToolTip("Swift Touch KDE")
+        self.menu = QMenu()
+
+        self.status_action = QAction("Status: unknown")
+        self.status_action.setEnabled(False)
+        self.menu.addAction(self.status_action)
+        self.menu.addSeparator()
+
+        self.start_action = QAction("Start Media Service")
+        self.start_action.triggered.connect(lambda: self.service_cmd(["start"]))
+        self.menu.addAction(self.start_action)
+
+        self.stop_action = QAction("Stop Media Service")
+        self.stop_action.triggered.connect(lambda: self.service_cmd(["stop"]))
+        self.menu.addAction(self.stop_action)
+
+        self.restart_action = QAction("Restart Media Service")
+        self.restart_action.triggered.connect(lambda: self.service_cmd(["restart"]))
+        self.menu.addAction(self.restart_action)
+        self.menu.addSeparator()
+
+        self.enable_action = QAction("Enable Autostart")
+        self.enable_action.triggered.connect(lambda: self.service_cmd(["enable", "--now"]))
+        self.menu.addAction(self.enable_action)
+
+        self.disable_action = QAction("Disable Autostart")
+        self.disable_action.triggered.connect(lambda: self.service_cmd(["disable", "--now"]))
+        self.menu.addAction(self.disable_action)
+        self.menu.addSeparator()
+
+        self.logs_action = QAction("Open Service Logs")
+        self.logs_action.triggered.connect(self.open_logs)
+        self.menu.addAction(self.logs_action)
+
+        self.project_action = QAction("Open Project Folder")
+        self.project_action.triggered.connect(self.open_project)
+        self.menu.addAction(self.project_action)
+        self.menu.addSeparator()
+
+        self.quit_action = QAction("Quit")
+        self.quit_action.triggered.connect(self.app.quit)
+        self.menu.addAction(self.quit_action)
+
+        self.tray.setContextMenu(self.menu)
+        self.tray.activated.connect(self.on_activated)
+
+        self.timer = QTimer()
+        self.timer.setInterval(3000)
+        self.timer.timeout.connect(self.refresh_status)
+        self.timer.start()
+
+        self.refresh_status()
+        self.tray.show()
+
+    def run(self) -> int:
+        return self.app.exec()
+
+    def on_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
+        if reason == QSystemTrayIcon.ActivationReason.Trigger:
+            self.refresh_status()
+
+    def run_cmd(self, args: list[str]) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+
+    def service_cmd(self, args: list[str]) -> None:
+        cmd = ["systemctl", "--user"] + args + [SERVICE_NAME]
+        p = self.run_cmd(cmd)
+        if p.returncode != 0:
+            msg = p.stderr.strip() or p.stdout.strip() or "unknown error"
+            self.tray.showMessage("Swift Touch KDE", f"Command failed: {' '.join(args)}\n{msg}")
+        self.refresh_status()
+
+    def refresh_status(self) -> None:
+        active = self.run_cmd(["systemctl", "--user", "is-active", SERVICE_NAME]).stdout.strip()
+        enabled = self.run_cmd(["systemctl", "--user", "is-enabled", SERVICE_NAME]).stdout.strip()
+        is_active = active == "active"
+        is_enabled = enabled == "enabled"
+
+        status = f"Status: {'active' if is_active else active or 'inactive'}"
+        status += f" | autostart: {'on' if is_enabled else enabled or 'off'}"
+        self.status_action.setText(status)
+
+        icon_name = "media-playback-start" if is_active else "media-playback-stop"
+        icon = QIcon.fromTheme(icon_name)
+        if icon.isNull():
+            icon = self.app.style().standardIcon(self.app.style().StandardPixmap.SP_MediaPlay)
+        self.tray.setIcon(icon)
+
+        self.start_action.setEnabled(not is_active)
+        self.stop_action.setEnabled(is_active)
+
+    def open_logs(self) -> None:
+        for cmd in (
+            ["konsole", "--noclose", "-e", "journalctl", "--user", "-u", SERVICE_NAME, "-f"],
+            ["x-terminal-emulator", "-e", "journalctl", "--user", "-u", SERVICE_NAME, "-f"],
+        ):
+            try:
+                subprocess.Popen(cmd)
+                return
+            except FileNotFoundError:
+                continue
+        self.tray.showMessage("Swift Touch KDE", "No terminal emulator found for logs.")
+
+    def open_project(self) -> None:
+        subprocess.Popen(["xdg-open", str(PROJECT_DIR)])
+
+
+def main() -> int:
+    tray = SwiftTouchTray()
+    return tray.run()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

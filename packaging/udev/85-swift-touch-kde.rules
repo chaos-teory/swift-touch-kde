@@ -1,0 +1,2 @@
+KERNEL=="uinput", MODE="0660", GROUP="input", TAG+="uaccess", OPTIONS+="static_node=uinput"
+SUBSYSTEM=="hidraw", KERNEL=="hidraw*", ATTRS{idVendor}=="093a", ATTRS{idProduct}=="480a", MODE="0660", GROUP="input", TAG+="uaccess"
