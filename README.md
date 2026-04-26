@@ -43,7 +43,7 @@ After install:
 - tray app launcher: `Swift Touch KDE`
 - settings app launcher: `Swift Touch KDE Settings`
 - autostart entry: `~/.config/autostart/swift-touch-kde-tray.desktop`
-- System Settings search alias entry: `kcm_swift_touch.desktop`
+- System Settings external module: `Swift Touch KDE` (Input Devices category)
 
 Open settings window manually:
 
